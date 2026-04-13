@@ -11,7 +11,7 @@ jobs:
     steps:
     # Lấy code từ repo
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     # ⚠️ Fix Python cho ESP-IDF 4.1
     - name: Setup Python 3.8
@@ -33,7 +33,7 @@ jobs:
 
     # Upload file .bin để tải về
     - name: Upload firmware
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: firmware
         path: |
