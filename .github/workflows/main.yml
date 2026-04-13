@@ -1,34 +1,62 @@
-name: Build ESP32 (ESP-IDF v4.1)
+name: Build ESP32 WiFi Tool
 
 on:
   push:
+    branches: [ main ]
   pull_request:
+    branches: [ main ]
+  workflow_dispatch:  # Cho phép chạy thủ công
 
 jobs:
   build:
-    runs-on: ubuntu-latest
-
+    runs-on: ubuntu-22.04
+    
     steps:
-    # Lấy code
-    - name: Checkout
+    - name: Checkout code
       uses: actions/checkout@v4
-
-    # Dùng ESP-IDF 4.1 (đã có sẵn môi trường, không cần export.sh)
-    - name: Setup ESP-IDF v4.1
-      uses: espressif/esp-idf-ci-action@v1
       with:
-        esp_idf_version: v4.1
-
-    # Build (⚠️ KHÔNG dùng export.sh nữa)
-    - name: Build project
-      run: idf.py build
-
-    # Upload firmware (.bin)
-    - name: Upload firmware
+        submodules: recursive
+    
+    - name: Setup Python 3.8
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.8'
+    
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y git wget flex bison gperf cmake ninja-build ccache libffi-dev libssl-dev dfu-util
+    
+    - name: Cache ESP-IDF v4.1
+      id: cache-idf
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/esp-idf-v4.1
+          ~/.espressif
+        key: esp-idf-v4.1-${{ runner.os }}-${{ hashFiles('**/CMakeLists.txt') }}
+    
+    - name: Install ESP-IDF v4.1
+      if: steps.cache-idf.outputs.cache-hit != 'true'
+      run: |
+        cd ~
+        git clone --branch v4.1 --recursive --depth 1 https://github.com/espressif/esp-idf.git esp-idf-v4.1
+        cd esp-idf-v4.1
+        ./install.sh
+    
+    - name: Build firmware
+      run: |
+        cd ~/esp-idf-v4.1
+        . ./export.sh
+        cd $GITHUB_WORKSPACE
+        idf.py build
+    
+    - name: Upload firmware artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: firmware
+        name: esp32-wifi-tool-firmware
         path: |
+          build/*.bin
           build/bootloader/bootloader.bin
           build/partition_table/partition-table.bin
-          build/*.bin
+        retention-days: 30
