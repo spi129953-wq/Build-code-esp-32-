@@ -9,29 +9,21 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    # Lấy code từ repo
+    # Lấy code
     - name: Checkout
       uses: actions/checkout@v4
 
-    # ⚠️ Fix Python cho ESP-IDF 4.1
-    - name: Setup Python 3.8
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.8'
-
-    # Cài ESP-IDF đúng version
+    # Dùng ESP-IDF 4.1 (đã có sẵn môi trường, không cần export.sh)
     - name: Setup ESP-IDF v4.1
       uses: espressif/esp-idf-ci-action@v1
       with:
         esp_idf_version: v4.1
 
-    # Build firmware
+    # Build (⚠️ KHÔNG dùng export.sh nữa)
     - name: Build project
-      run: |
-        . $IDF_PATH/export.sh
-        idf.py build
+      run: idf.py build
 
-    # Upload file .bin để tải về
+    # Upload firmware (.bin)
     - name: Upload firmware
       uses: actions/upload-artifact@v4
       with:
